@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spēle ar Līmeņiem un Atom Bumbām</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #282c34;
+        }
+
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            background-color: #111;
+            border: 1px solid #fff;
+        }
+
+        .scoreboard {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 24px;
+            font-family: Arial, sans-serif;
+        }
+
+        .levelboard {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 24px;
+            font-family: Arial, sans-serif;
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 48px;
+            font-family: Arial, sans-serif;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scoreboard">Punkti: <span id="score">0</span></div>
+    <div class="levelboard">Līmenis: <span id="level">1</span></div>
+    <div class="game-over" id="gameOver">Spēle beigusies! (Nospied R, lai restartētu)</div>
+    
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const levelElement = document.getElementById('level');
+        const gameOverElement = document.getElementById('gameOver');
+        const canvasWidth = window.innerWidth;
+        const canvasHeight = window.innerHeight;
+
+        // Izmērs spēles laukam
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+
+        let score = 0;
+        let level = 1;
+        let isGameOver = false;
+
+        // Spēlētāja objekts (cilvēks lielāks)
+        const player = {
+            x: canvasWidth / 2,
+            y: canvasHeight - 80,  // Palielināts attālums no apakšas
+            size: 60,  // Lielāks spēlētājs
+            speed: 5
+        };
+
+        // Atom bumbas (objekti), kas krīt no augšas
+        const bombs = [];
+
+        // Funkcija, kas ģenerē jaunu atombombu
+        function generateBomb() {
+            const size = Math.random() * 60 + 40;  // Atombombas lielums
+            const x = Math.random() * (canvasWidth - size);  // Atombombas sākotnējā pozīcija uz X ass
+            bombs.push({ x, y: -size, size, speed: Math.random() * 2 + 2 + level * 0.5 });  // Atombombas ātrums pieaug līmeņiem
+        }
+
+        // Funkcija, kas atjaunina spēles stāvokli
+        function updateGame() {
+            if (isGameOver) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Dzēš ekrānu
+
+            // Uzturēt spēlētāju kustībā
+            if (rightPressed && player.x + player.size < canvas.width) {
+                player.x += player.speed;
+            }
+            if (leftPressed && player.x > 0) {
+                player.x -= player.speed;
+            }
+            if (upPressed && player.y > 0) {
+                player.y -= player.speed;
+            }
+            if (downPressed && player.y + player.size < canvas.height) {
+                player.y += player.speed;
+            }
+
+            // Uzturēt atombumbas kustībā un pārbaudīt sadursmes
+            for (let i = 0; i < bombs.length; i++) {
+                const bomb = bombs[i];
+                bomb.y += bomb.speed;  // Atombombas ātrums
+
+                // Pārbaudām sadursmes ar spēlētāju
+                if (bomb.y + bomb.size > player.y && bomb.y < player.y + player.size && bomb.x + bomb.size > player.x && bomb.x < player.x + player.size) {
+                    gameOver();
+                }
+
+                // Ja atombomba nokļūst ekrāna apakšā, mēs to izdzēšam un palielinām punktu skaitu
+                if (bomb.y > canvas.height) {
+                    bombs.splice(i, 1);
+                    score++;
+                    // Palielinām līmeni, kad sasniegts noteikts punktu skaits
+                    if (score % 10 === 0) {
+                        levelUp();
+                    }
+                }
+
+                // Zīmē atombumbu (spilgti sarkans ar izstarojumu)
+                ctx.fillStyle = '#ff3300'; // Spilgti oranžs-sarkans
+                ctx.shadowColor = '#ffcc00'; // Izstarojuma krāsa
+                ctx.shadowBlur = 20; // Izstarojuma izplūdums
+                ctx.beginPath();
+                ctx.arc(bomb.x + bomb.size / 2, bomb.y + bomb.size / 2, bomb.size / 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;  // Atcelt izstarojumu pēc zīmēšanas
+            }
+
+            // Zīmē lielāko spēlētāju
+            ctx.fillStyle = '#00ff00';
+            ctx.fillRect(player.x, player.y, player.size, player.size);
+
+            // Atjaunina skoru
+            scoreElement.textContent = score;
+
+            // Atjaunina līmeni
+            levelElement.textContent = level;
+
+            // Pievienot jaunu atombumbu biežāk (palielināts ģenerēšanas ātrums līmenim)
+            if (Math.random() < 0.05 + level * 0.01) {  // Vairāk atombumbu katram līmenim
+                generateBomb();
+            }
+
+            // Atjaunina ekrānu
+            requestAnimationFrame(updateGame);
+        }
+
+        // Spēlētāja kustība ar taustiņiem
+        let rightPressed = false;
+        let leftPressed = false;
+        let upPressed = false;
+        let downPressed = false;
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowRight') {
+                rightPressed = true;
+            } else if (event.key === 'ArrowLeft') {
+                leftPressed = true;
+            } else if (event.key === 'ArrowUp') {
+                upPressed = true;
+            } else if (event.key === 'ArrowDown') {
+                downPressed = true;
+            } else if (event.key === 'r' || event.key === 'R') {
+                if (isGameOver) {
+                    restartGame();
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (event) => {
+            if (event.key === 'ArrowRight') {
+                rightPressed = false;
+            } else if (event.key === 'ArrowLeft') {
+                leftPressed = false;
+            } else if (event.key === 'ArrowUp') {
+                upPressed = false;
+            } else if (event.key === 'ArrowDown') {
+                downPressed = false;
+            }
+        });
+
+        // Funkcija, kas beidz spēli
+        function gameOver() {
+            isGameOver = true;
+            gameOverElement.style.display = 'block';
+        }
+
+        // Funkcija, kas palielina līmeni
+        function levelUp() {
+            level++;
+            // Var mainīt līmeņa grūtību, piemēram, palielinot atombumbu kritiena ātrumu
+            player.speed += 0.5;  // Piemēram, palielina spēlētāja ātrumu
+        }
+
+        // Funkcija, kas restartē spēli
+        function restartGame() {
+            // Atjauno sākotnējos iestatījumus
+            score = 0;
+            level = 1;
+            isGameOver = false;
+            player.x = canvasWidth / 2;
+            player.y = canvasHeight - 80;  // Atjauno pozīciju
+            bombs.length = 0;  // Izdzēš visas atombumbas
+
+            // Atslēdz spēles beigas paziņojumu
+            gameOverElement.style.display = 'none';
+
+            // Sāk jaunu spēles ciklu
+            updateGame();
+        }
+
+        // Uzsāk spēli
+        updateGame();
+    </script>
+
+</body>
+</html>
