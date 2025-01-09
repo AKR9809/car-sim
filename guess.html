@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cipara uzminēšanas spēle</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f8ff;
+            margin: 0;
+        }
+        .game-container {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+        h1 {
+            color: #333;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .message {
+            margin-top: 15px;
+            font-size: 18px;
+            color: #d9534f;
+        }
+        .win-message {
+            color: #5bc0de;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Uzmini ciparu!</h1>
+        <p>Es esmu izvēlējies ciparu no 1 līdz 100. Mēģini uzminēt!</p>
+        <input type="number" id="guessInput" placeholder="Ievadi ciparu" min="1" max="100">
+        <button onclick="checkGuess()">Pārbaudīt</button>
+        <p id="message" class="message"></p>
+        <p id="attempts">Pirms pirmās mēģinājuma reizes nav mēģinājumu skaita.</p>
+    </div>
+
+    <script>
+        let secretNumber = Math.floor(Math.random() * 100) + 1;
+        let attempts = 0;
+
+        function checkGuess() {
+            const userGuess = document.getElementById("guessInput").value;
+            const message = document.getElementById("message");
+            const attemptsText = document.getElementById("attempts");
+
+            if (userGuess === "") {
+                message.textContent = "Lūdzu, ievadi ciparu!";
+                message.classList.remove("win-message");
+                return;
+            }
+
+            attempts++;
+            if (userGuess == secretNumber) {
+                message.textContent = `Apsveicu! Tu uzminēji pareizo ciparu: ${secretNumber}!`;
+                message.classList.add("win-message");
+                attemptsText.textContent = `Tu uzminēji pēc ${attempts} mēģinājumiem!`;
+                resetGame();
+            } else if (userGuess < secretNumber) {
+                message.textContent = "Pārāk zems cipars. Mēģini vēlreiz!";
+                message.classList.remove("win-message");
+            } else {
+                message.textContent = "Pārāk augsts cipars. Mēģini vēlreiz!";
+                message.classList.remove("win-message");
+            }
+
+            attemptsText.textContent = `Mēģinājumu skaits: ${attempts}`;
+            document.getElementById("guessInput").value = "";
+        }
+
+        function resetGame() {
+            secretNumber = Math.floor(Math.random() * 100) + 1;
+            attempts = 0;
+        }
+    </script>
+</body>
+</html>
