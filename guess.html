@@ -81,15 +81,15 @@
 
             attempts++;
             if (userGuess == secretNumber) {
-                message.textContent = `Apsveicu! Tu uzminēji pareizo ciparu: ${secretNumber}!`;
+                message.textContent = `Apsveicu! Tu uzminēji pareizo skaitli: ${secretNumber}!`;
                 message.classList.add("win-message");
                 attemptsText.textContent = `Tu uzminēji pēc ${attempts} mēģinājumiem!`;
                 resetGame();
             } else if (userGuess < secretNumber) {
-                message.textContent = "Pārāk zems cipars. Mēģini vēlreiz!";
+                message.textContent = "Pārāk zems skaitlis. Mēģini vēlreiz!";
                 message.classList.remove("win-message");
             } else {
-                message.textContent = "Pārāk augsts cipars. Mēģini vēlreiz!";
+                message.textContent = "Pārāk augsts skaitlis. Mēģini vēlreiz!";
                 message.classList.remove("win-message");
             }
 
